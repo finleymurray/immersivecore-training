@@ -28,57 +28,57 @@ addRoute('/login', async (el) => {
 }, { public: true });
 
 addRoute('/', async (el) => {
-  const { render } = await import('./js/views/dashboard.js?v=3');
+  const { render } = await import('./js/views/dashboard.js?v=4');
   await render(el);
 });
 
 addRoute('/modules', async (el) => {
-  const { render } = await import('./js/views/modules-list.js?v=3');
+  const { render } = await import('./js/views/modules-list.js?v=4');
   await render(el);
 });
 
 addRoute('/modules/new', async (el) => {
-  const { render } = await import('./js/views/module-form.js?v=3');
+  const { render } = await import('./js/views/module-form.js?v=4');
   await render(el);
 });
 
 addRoute('/modules/:id', async (el, params) => {
   if (params.id === 'new') {
-    const { render } = await import('./js/views/module-form.js?v=3');
+    const { render } = await import('./js/views/module-form.js?v=4');
     await render(el);
     return;
   }
-  const { render } = await import('./js/views/module-detail.js?v=3');
+  const { render } = await import('./js/views/module-detail.js?v=4');
   await render(el, params.id);
 });
 
 addRoute('/modules/:id/edit', async (el, params) => {
-  const { render } = await import('./js/views/module-form.js?v=3');
+  const { render } = await import('./js/views/module-form.js?v=4');
   await render(el, params.id);
 });
 
 addRoute('/session/new', async (el) => {
-  const { render } = await import('./js/views/session-form.js?v=3');
+  const { render } = await import('./js/views/session-form.js?v=4');
   await render(el);
 });
 
 addRoute('/session/:id', async (el, params) => {
-  const { render } = await import('./js/views/session-detail.js?v=3');
+  const { render } = await import('./js/views/session-detail.js?v=4');
   await render(el, params.id);
 });
 
 addRoute('/assessment/new', async (el) => {
-  const { render } = await import('./js/views/assessment-form.js?v=3');
+  const { render } = await import('./js/views/assessment-form.js?v=4');
   await render(el);
 });
 
 addRoute('/assessment/:id', async (el, params) => {
-  const { render } = await import('./js/views/assessment-detail.js?v=3');
+  const { render } = await import('./js/views/assessment-detail.js?v=4');
   await render(el, params.id);
 });
 
 addRoute('/employee/:id', async (el, params) => {
-  const { render } = await import('./js/views/employee-training.js?v=3');
+  const { render } = await import('./js/views/employee-training.js?v=4');
   await render(el, params.id);
 });
 

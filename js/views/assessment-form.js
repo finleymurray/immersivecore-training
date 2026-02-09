@@ -121,7 +121,7 @@ export async function render(el) {
 
   // ---- Searchable dropdowns ----
   function initSearchableSelect(wrapperEl, searchEl, dropdownEl, valueEl, items, onSelect) {
-    function renderDropdown(filter) {
+    function showDropdown(filter) {
       const q = (filter || '').toLowerCase();
       const matched = q ? items.filter(i => i.label.toLowerCase().includes(q)) : items;
       if (matched.length === 0) {
@@ -131,14 +131,21 @@ export async function render(el) {
           `<div class="searchable-select-option" data-value="${i.value}">${esc(i.label)}</div>`
         ).join('');
       }
-      dropdownEl.style.display = '';
+      dropdownEl.classList.add('open');
     }
 
-    searchEl.addEventListener('focus', () => renderDropdown(searchEl.value));
+    function hideDropdown() {
+      dropdownEl.classList.remove('open');
+    }
+
+    searchEl.addEventListener('focus', () => showDropdown(searchEl.value));
     searchEl.addEventListener('input', () => {
       valueEl.value = '';
-      renderDropdown(searchEl.value);
+      showDropdown(searchEl.value);
       if (onSelect) onSelect('');
+    });
+    searchEl.addEventListener('blur', () => {
+      setTimeout(hideDropdown, 150);
     });
 
     dropdownEl.addEventListener('mousedown', (e) => {
@@ -150,12 +157,8 @@ export async function render(el) {
       if (!item) return;
       searchEl.value = item.label;
       valueEl.value = val;
-      dropdownEl.style.display = 'none';
+      hideDropdown();
       if (onSelect) onSelect(val, item);
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!wrapperEl.contains(e.target)) dropdownEl.style.display = 'none';
     });
   }
 

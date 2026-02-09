@@ -962,6 +962,10 @@ main {
   z-index: 100;
 }
 
+.searchable-select-dropdown.open {
+  display: block;
+}
+
 .searchable-select-option {
   padding: 10px 12px;
   font-size: 14px;
