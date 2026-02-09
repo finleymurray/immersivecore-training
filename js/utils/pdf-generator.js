@@ -102,17 +102,27 @@ function buildTrainingPDFDoc(session, module) {
       const isCovered = state === true;
 
       // Draw status indicator
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
       if (isNa) {
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
         doc.setTextColor(255, 193, 7);
         doc.text('N/A', ml + 3, y);
       } else if (isCovered) {
-        doc.setTextColor(76, 175, 80);
-        doc.text('\u2714', ml + 5, y);
+        // Draw a green tick using lines
+        const cx = ml + 7;
+        const cy = y - 2.5;
+        doc.setDrawColor(76, 175, 80);
+        doc.setLineWidth(0.8);
+        doc.line(cx - 2, cy + 1, cx, cy + 3);
+        doc.line(cx, cy + 3, cx + 3.5, cy - 1.5);
       } else {
-        doc.setTextColor(239, 68, 68);
-        doc.text('\u2718', ml + 5, y);
+        // Draw a red cross using lines
+        const cx = ml + 7;
+        const cy = y - 1;
+        doc.setDrawColor(239, 68, 68);
+        doc.setLineWidth(0.8);
+        doc.line(cx - 2, cy - 2, cx + 2, cy + 2);
+        doc.line(cx + 2, cy - 2, cx - 2, cy + 2);
       }
 
       // Draw topic text
