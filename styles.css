@@ -78,6 +78,8 @@ body {
 .header-nav-dropdown {
   position: relative;
   margin-left: auto;
+  padding-bottom: 8px;
+  margin-bottom: -8px;
 }
 .header-home-btn {
   display: inline-block;
@@ -99,7 +101,6 @@ body {
   position: absolute;
   right: 0;
   top: 100%;
-  margin-top: 4px;
   background: #1a1a1a;
   border: 1px solid #444;
   border-radius: 4px;
