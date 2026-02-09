@@ -1,5 +1,5 @@
 import { fetchModule, createModule, updateModule } from '../services/training-service.js';
-import { uploadModulePDF } from '../services/storage-service.js';
+import { uploadModulePDF, uploadModuleFile, deleteModuleFile } from '../services/storage-service.js';
 import { navigate } from '../router.js';
 
 function esc(str) {
@@ -16,6 +16,9 @@ export async function render(el, editId) {
   }
 
   const syllabus = existing?.syllabus ? [...existing.syllabus] : [];
+  const moduleFiles = existing?.module_files ? [...existing.module_files] : [];
+  let pendingFiles = []; // new files to upload on save
+  let filesToDelete = []; // paths of files to remove on save
   let selectedFile = null;
 
   el.innerHTML = `
@@ -86,7 +89,23 @@ export async function render(el, editId) {
       </fieldset>
 
       <fieldset class="form-section">
-        <legend><span class="section-number">3</span> Source Material <span class="optional-tag">Optional</span></legend>
+        <legend><span class="section-number">3</span> Module Files <span class="optional-tag">Optional</span></legend>
+        <p class="section-description">Upload printable quizzes, answer sheets, and other training documents. Managers can download and print these from the module page.</p>
+
+        <div id="module-files-list"></div>
+
+        <div class="upload-area" id="files-upload-area">
+          <div class="upload-prompt">
+            <div class="upload-icon">&#128196;</div>
+            <p>Drag &amp; drop files here or <span class="upload-link" id="browse-files">browse</span></p>
+            <p class="upload-hint">PDF, Word, images, or any printable document</p>
+          </div>
+          <input type="file" id="files-input" multiple style="display:none;">
+        </div>
+      </fieldset>
+
+      <fieldset class="form-section">
+        <legend><span class="section-number">4</span> Source Material <span class="optional-tag">Optional</span></legend>
         <p class="section-description">Upload the training material PDF for reference.</p>
 
         <div class="upload-area" id="pdf-upload-area">
@@ -220,6 +239,73 @@ export async function render(el, editId) {
     }
   });
 
+  // ---- Module Files ----
+  const filesListEl = el.querySelector('#module-files-list');
+  const filesUploadArea = el.querySelector('#files-upload-area');
+  const filesInput = el.querySelector('#files-input');
+  const browseFiles = el.querySelector('#browse-files');
+
+  browseFiles.addEventListener('click', () => filesInput.click());
+
+  function renderFilesList() {
+    const allFiles = [
+      ...moduleFiles.map((f, i) => ({ ...f, type: 'existing', index: i })),
+      ...pendingFiles.map((f, i) => ({ filename: f.name, size: f.size, type: 'pending', index: i })),
+    ];
+    if (allFiles.length === 0) {
+      filesListEl.innerHTML = '';
+      return;
+    }
+    filesListEl.innerHTML = `<ul class="module-files-list">${allFiles.map(f => `
+      <li class="module-file-item">
+        <span class="module-file-icon">&#128196;</span>
+        <span class="module-file-name">${esc(f.filename)}</span>
+        <span class="module-file-size">${(f.size / 1024).toFixed(0)} KB</span>
+        ${f.type === 'pending' ? '<span class="module-file-badge">New</span>' : ''}
+        <button type="button" class="module-file-remove" data-type="${f.type}" data-index="${f.index}" title="Remove">&times;</button>
+      </li>
+    `).join('')}</ul>`;
+
+    filesListEl.querySelectorAll('.module-file-remove').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const type = btn.dataset.type;
+        const idx = parseInt(btn.dataset.index);
+        if (type === 'existing') {
+          filesToDelete.push(moduleFiles[idx].path);
+          moduleFiles.splice(idx, 1);
+        } else {
+          pendingFiles.splice(idx, 1);
+        }
+        renderFilesList();
+      });
+    });
+  }
+  renderFilesList();
+
+  function addPendingFiles(files) {
+    for (const file of files) {
+      pendingFiles.push(file);
+    }
+    renderFilesList();
+  }
+
+  filesInput.addEventListener('change', () => {
+    if (filesInput.files.length > 0) {
+      addPendingFiles(Array.from(filesInput.files));
+      filesInput.value = '';
+    }
+  });
+
+  filesUploadArea.addEventListener('dragover', (e) => { e.preventDefault(); filesUploadArea.classList.add('drag-over'); });
+  filesUploadArea.addEventListener('dragleave', () => filesUploadArea.classList.remove('drag-over'));
+  filesUploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    filesUploadArea.classList.remove('drag-over');
+    if (e.dataTransfer.files.length > 0) {
+      addPendingFiles(Array.from(e.dataTransfer.files));
+    }
+  });
+
   // Submit
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -278,6 +364,24 @@ export async function render(el, editId) {
           source_pdf_path: path,
           source_pdf_filename: filename,
         });
+      }
+
+      // Handle module files: delete removed, upload new
+      if (filesToDelete.length > 0 || pendingFiles.length > 0) {
+        progressArea.innerHTML = '<div class="submit-progress"><div class="progress-spinner"></div><span>Processing module files...</span></div>';
+
+        for (const path of filesToDelete) {
+          try { await deleteModuleFile(path); } catch (e) { console.error('Failed to delete file:', e); }
+        }
+
+        const updatedFiles = [...moduleFiles];
+        for (let i = 0; i < pendingFiles.length; i++) {
+          progressArea.innerHTML = `<div class="submit-progress"><div class="progress-spinner"></div><span>Uploading file ${i + 1} of ${pendingFiles.length}...</span></div>`;
+          const result = await uploadModuleFile(savedModule.id, pendingFiles[i]);
+          updatedFiles.push({ path: result.path, filename: result.filename, size: result.size });
+        }
+
+        await updateModule(savedModule.id, { module_files: updatedFiles });
       }
 
       navigate('/modules/' + savedModule.id);
