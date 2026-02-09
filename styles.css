@@ -74,12 +74,54 @@ body {
   color: #fff;
 }
 
-.nav-home {
-  opacity: 0.7;
-  font-size: 13px;
+/* ---- Header Home Dropdown ---- */
+.header-nav-dropdown {
+  position: relative;
+  margin-left: auto;
 }
-.nav-home:hover {
-  opacity: 1;
+.header-home-btn {
+  display: inline-block;
+  padding: 6px 14px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 4px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.header-home-btn:hover {
+  background: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.6);
+}
+.header-dropdown-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+  background: #1a1a1a;
+  border: 1px solid #444;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  min-width: 180px;
+  z-index: 1000;
+}
+.header-nav-dropdown:hover .header-dropdown-menu {
+  display: block;
+}
+.header-dropdown-item {
+  display: block;
+  padding: 10px 16px;
+  color: #ccc;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.1s;
+}
+.header-dropdown-item:hover {
+  background: #222;
+  color: #fff;
 }
 
 .btn-nav {
