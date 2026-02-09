@@ -60,9 +60,12 @@ export async function render(el, id) {
 
       ${proofUrl ? `
         <div class="detail-section">
-          <h2><span class="section-number">3</span> Proof Photo</h2>
+          <h2><span class="section-number">3</span> Quiz Upload</h2>
           <div class="scan-preview">
-            <img src="${esc(proofUrl)}" alt="Assessment proof" class="scan-image">
+            ${assessment.proof_scan_filename?.toLowerCase().endsWith('.pdf')
+              ? `<div class="pdf-preview-placeholder">&#128196; <a href="${esc(proofUrl)}" target="_blank" class="btn-link">${esc(assessment.proof_scan_filename)}</a></div>`
+              : `<img src="${esc(proofUrl)}" alt="Assessment proof" class="scan-image">`
+            }
           </div>
         </div>
       ` : ''}

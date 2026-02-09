@@ -59,7 +59,7 @@ export async function render(el) {
 
       <fieldset class="form-section" id="topics-section" style="display:none;">
         <legend><span class="section-number">2</span> Topic Checklist</legend>
-        <p class="section-description">Tick each topic covered during this session.</p>
+        <p class="section-description">Mark each topic as covered or N/A (not applicable to this employee's role).</p>
         <ul class="topic-checklist" id="topic-checklist"></ul>
       </fieldset>
 
@@ -108,6 +108,29 @@ export async function render(el) {
   const sigPad = createSignaturePad(el.querySelector('#signature-container'));
 
   let currentModule = null;
+  // Track topic states: false = not covered, true = covered, 'na' = not applicable
+  let topicStates = [];
+
+  function renderTopicItem(topic, i) {
+    const state = topicStates[i];
+    const isCovered = state === true;
+    const isNa = state === 'na';
+
+    return `
+      <li class="topic-checklist-item" data-index="${i}">
+        <button type="button" class="topic-toggle-btn ${isCovered ? 'topic-btn-covered' : ''}" data-action="toggle" data-index="${i}" title="Toggle covered">
+          ${isCovered ? '<span class="topic-icon topic-icon-covered">&#10004;</span>' : '<span class="topic-icon topic-icon-uncovered">&#10008;</span>'}
+        </button>
+        <span class="topic-label ${isNa ? 'topic-label-na' : ''}">${esc(topic)}</span>
+        <button type="button" class="topic-na-btn ${isNa ? 'topic-na-active' : ''}" data-action="na" data-index="${i}" title="Not applicable">N/A</button>
+      </li>
+    `;
+  }
+
+  function refreshTopicList() {
+    const syllabus = currentModule?.syllabus || [];
+    topicChecklist.innerHTML = syllabus.map((topic, i) => renderTopicItem(topic, i)).join('');
+  }
 
   // Load topic checklist when module changes
   moduleSelect.addEventListener('change', async () => {
@@ -115,21 +138,36 @@ export async function render(el) {
     if (!moduleId) {
       topicsSection.style.display = 'none';
       currentModule = null;
+      topicStates = [];
       return;
     }
     currentModule = await fetchModule(moduleId);
     const syllabus = Array.isArray(currentModule.syllabus) ? currentModule.syllabus : [];
     if (syllabus.length === 0) {
       topicsSection.style.display = 'none';
+      topicStates = [];
       return;
     }
     topicsSection.style.display = '';
-    topicChecklist.innerHTML = syllabus.map((topic, i) => `
-      <li class="topic-checklist-item">
-        <input type="checkbox" id="topic-${i}" data-index="${i}">
-        <label for="topic-${i}">${esc(topic)}</label>
-      </li>
-    `).join('');
+    topicStates = syllabus.map(() => false);
+    refreshTopicList();
+  });
+
+  // Delegate click events on topic buttons
+  topicChecklist.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const idx = parseInt(btn.dataset.index);
+    if (isNaN(idx)) return;
+
+    if (btn.dataset.action === 'toggle') {
+      // Toggle between covered and not covered (clears N/A)
+      topicStates[idx] = topicStates[idx] === true ? false : true;
+    } else if (btn.dataset.action === 'na') {
+      // Toggle N/A on/off
+      topicStates[idx] = topicStates[idx] === 'na' ? false : 'na';
+    }
+    refreshTopicList();
   });
 
   // Submit
@@ -158,13 +196,10 @@ export async function render(el) {
       return;
     }
 
-    // Build topics_completed
-    const syllabus = currentModule?.syllabus || [];
-    const topicsCompleted = syllabus.map((_, i) => {
-      const cb = el.querySelector(`#topic-${i}`);
-      return cb ? cb.checked : false;
-    });
-    const allTopicsCovered = topicsCompleted.length > 0 && topicsCompleted.every(Boolean);
+    // Build topics_completed — true, false, or "na"
+    const topicsCompleted = [...topicStates];
+    // "All covered" if every topic is either true (covered) or "na" (not applicable)
+    const allTopicsCovered = topicsCompleted.length > 0 && topicsCompleted.every(v => v === true || v === 'na');
 
     submitBtn.disabled = true;
     submitBtn.textContent = 'Saving\u2026';

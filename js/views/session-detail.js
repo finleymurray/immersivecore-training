@@ -45,11 +45,24 @@ export async function render(el, id) {
           <h2><span class="section-number">2</span> Topics Covered</h2>
           <ul class="topic-checklist">
             ${syllabus.map((topic, i) => {
-              const covered = topics[i] === true;
+              const state = topics[i];
+              const isNa = state === 'na';
+              const isCovered = state === true;
+              let iconHtml, statusClass;
+              if (isNa) {
+                iconHtml = '<span class="topic-icon-detail topic-icon-na">N/A</span>';
+                statusClass = 'topic-label-na';
+              } else if (isCovered) {
+                iconHtml = '<span class="topic-icon-detail topic-icon-covered">&#10004;</span>';
+                statusClass = '';
+              } else {
+                iconHtml = '<span class="topic-icon-detail topic-icon-uncovered">&#10008;</span>';
+                statusClass = '';
+              }
               return `
                 <li class="topic-checklist-item" style="cursor:default;">
-                  <span class="topic-status ${covered ? 'topic-status-pass' : 'topic-status-fail'}">${covered ? '\u2713' : '\u2717'}</span>
-                  <span>${esc(topic)}</span>
+                  ${iconHtml}
+                  <span class="${statusClass}">${esc(topic)}</span>
                 </li>
               `;
             }).join('')}

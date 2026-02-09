@@ -92,22 +92,35 @@ function buildTrainingPDFDoc(session, module) {
     y = sectionHeader(doc, y, ml, pw, mr, 2, 'Topics Covered');
 
     for (let i = 0; i < syllabus.length; i++) {
-      if (y + 7 > ph - 25) {
+      if (y + 8 > ph - 25) {
         addFooter(doc, 'Training Session Log');
         doc.addPage();
         y = 18;
       }
-      const covered = topics[i] === true;
+      const state = topics[i];
+      const isNa = state === 'na';
+      const isCovered = state === true;
+
+      // Draw status indicator
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      if (isNa) {
+        doc.setTextColor(255, 193, 7);
+        doc.text('N/A', ml + 3, y);
+      } else if (isCovered) {
+        doc.setTextColor(76, 175, 80);
+        doc.text('\u2714', ml + 5, y);
+      } else {
+        doc.setTextColor(239, 68, 68);
+        doc.text('\u2718', ml + 5, y);
+      }
+
+      // Draw topic text
       doc.setFontSize(10);
-      doc.setTextColor(...dark);
       doc.setFont('helvetica', 'normal');
-      const mark = covered ? '\u2713' : '\u2717';
-      const markColor = covered ? [76, 175, 80] : [239, 68, 68];
-      doc.setTextColor(...markColor);
-      doc.text(mark, ml + 5, y);
-      doc.setTextColor(...dark);
-      doc.text(syllabus[i], ml + 15, y);
-      y += 7;
+      doc.setTextColor(...(isNa ? grey : dark));
+      doc.text(syllabus[i], ml + 18, y);
+      y += 8;
     }
 
     y += 2;

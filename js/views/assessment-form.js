@@ -73,16 +73,16 @@ export async function render(el) {
       </fieldset>
 
       <fieldset class="form-section">
-        <legend><span class="section-number">3</span> Proof Photo <span class="optional-tag">Optional</span></legend>
-        <p class="section-description">Upload a photo of the assessment paper for records.</p>
+        <legend><span class="section-number">3</span> Quiz Upload <span class="optional-tag">Optional</span></legend>
+        <p class="section-description">Upload the completed quiz paper (PDF or image). Multi-page PDFs supported.</p>
 
         <div class="upload-area" id="proof-upload-area">
           <div class="upload-prompt">
-            <div class="upload-icon">&#128247;</div>
-            <p>Drag &amp; drop a photo here or <span class="upload-link" id="browse-proof">browse</span></p>
-            <p class="upload-hint">JPEG or PNG</p>
+            <div class="upload-icon">&#128196;</div>
+            <p>Drag &amp; drop the quiz file here or <span class="upload-link" id="browse-proof">browse</span></p>
+            <p class="upload-hint">PDF, JPEG or PNG</p>
           </div>
-          <input type="file" id="proof-file-input" accept="image/jpeg,image/png" style="display:none;">
+          <input type="file" id="proof-file-input" accept="application/pdf,image/jpeg,image/png" style="display:none;">
         </div>
       </fieldset>
 
@@ -157,22 +157,34 @@ export async function render(el) {
     }
   });
 
-  // Proof photo upload
+  // Quiz file upload (PDF or image)
+  const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
+
+  function showProofPreview(file) {
+    selectedProof = file;
+    const isPdf = file.type === 'application/pdf';
+    const sizeKB = (file.size / 1024).toFixed(0);
+    const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+    const sizeText = file.size > 1024 * 1024 ? `${sizeMB} MB` : `${sizeKB} KB`;
+
+    proofUploadArea.innerHTML = `
+      <div class="upload-preview">
+        ${isPdf
+          ? `<div class="pdf-preview-placeholder">&#128196; ${esc(file.name)}</div>`
+          : `<img src="${URL.createObjectURL(file)}" class="preview-image" alt="Quiz scan">`
+        }
+        <div class="upload-file-info">
+          <span>${esc(file.name)} (${sizeText})</span>
+          <button type="button" class="btn btn-sm btn-secondary" id="change-proof-btn">Change</button>
+        </div>
+      </div>
+    `;
+    el.querySelector('#change-proof-btn').addEventListener('click', () => proofFileInput.click());
+  }
+
   el.querySelector('#browse-proof').addEventListener('click', () => proofFileInput.click());
   proofFileInput.addEventListener('change', () => {
-    if (proofFileInput.files.length > 0) {
-      selectedProof = proofFileInput.files[0];
-      proofUploadArea.innerHTML = `
-        <div class="upload-preview">
-          <img src="${URL.createObjectURL(selectedProof)}" class="preview-image" alt="Proof photo">
-          <div class="upload-file-info">
-            <span>${esc(selectedProof.name)} (${(selectedProof.size / 1024).toFixed(0)} KB)</span>
-            <button type="button" class="btn btn-sm btn-secondary" id="change-proof-btn">Change</button>
-          </div>
-        </div>
-      `;
-      el.querySelector('#change-proof-btn').addEventListener('click', () => proofFileInput.click());
-    }
+    if (proofFileInput.files.length > 0) showProofPreview(proofFileInput.files[0]);
   });
 
   proofUploadArea.addEventListener('dragover', (e) => { e.preventDefault(); proofUploadArea.classList.add('drag-over'); });
@@ -181,12 +193,11 @@ export async function render(el) {
     e.preventDefault();
     proofUploadArea.classList.remove('drag-over');
     const file = e.dataTransfer.files[0];
-    if (file && (file.type === 'image/jpeg' || file.type === 'image/png')) {
-      selectedProof = file;
+    if (file && ALLOWED_TYPES.includes(file.type)) {
       const dt = new DataTransfer();
       dt.items.add(file);
       proofFileInput.files = dt.files;
-      proofFileInput.dispatchEvent(new Event('change'));
+      showProofPreview(file);
     }
   });
 
@@ -241,9 +252,9 @@ export async function render(el) {
 
       const assessment = await createAssessment(payload);
 
-      // Upload proof scan if selected
+      // Upload quiz file to Supabase Storage if selected
       if (selectedProof) {
-        progressArea.innerHTML = '<div class="submit-progress"><div class="progress-spinner"></div><span>Uploading proof photo...</span></div>';
+        progressArea.innerHTML = '<div class="submit-progress"><div class="progress-spinner"></div><span>Uploading quiz file...</span></div>';
         const { path, filename } = await uploadProofScan(assessment.id, selectedProof);
         await updateAssessment(assessment.id, {
           proof_scan_path: path,
@@ -252,9 +263,14 @@ export async function render(el) {
       }
 
       // Generate PDF and upload to Google Drive
+      const mod = await fetchModule(moduleId);
+      const moduleName = mod?.module_name || 'Assessment';
+      const safeName = moduleName.replace(/[^a-zA-Z0-9 ]/g, '');
+      const safTrainee = traineeName.replace(/[^a-zA-Z0-9 ]/g, '');
+      const dateStr = assessmentDate.replace(/-/g, '');
+
       try {
         progressArea.innerHTML = '<div class="submit-progress"><div class="progress-spinner"></div><span>Generating PDF...</span></div>';
-        const mod = await fetchModule(moduleId);
         const { generateAssessmentPDFBlob } = await import('../utils/pdf-generator.js');
         const pdfBlob = generateAssessmentPDFBlob(payload, mod);
 
@@ -266,10 +282,6 @@ export async function render(el) {
           reader.readAsDataURL(pdfBlob);
         });
 
-        const moduleName = mod?.module_name || 'Assessment';
-        const safeName = moduleName.replace(/[^a-zA-Z0-9 ]/g, '');
-        const safTrainee = traineeName.replace(/[^a-zA-Z0-9 ]/g, '');
-        const dateStr = assessmentDate.replace(/-/g, '');
         const fileName = `Assessment_${safTrainee}_${safeName}_${dateStr}.pdf`;
 
         const driveResult = await uploadToGoogleDrive({
@@ -287,6 +299,32 @@ export async function render(el) {
         });
       } catch (driveErr) {
         console.error('Drive upload failed (assessment saved):', driveErr);
+      }
+
+      // Upload quiz file to Google Drive too
+      if (selectedProof) {
+        try {
+          progressArea.innerHTML = '<div class="submit-progress"><div class="progress-spinner"></div><span>Uploading quiz to Google Drive...</span></div>';
+          const { uploadToGoogleDrive } = await import('../services/gdrive-service.js');
+          const quizReader = new FileReader();
+          const quizBase64 = await new Promise((resolve) => {
+            quizReader.onload = () => resolve(quizReader.result.split(',')[1]);
+            quizReader.readAsDataURL(selectedProof);
+          });
+
+          const ext = selectedProof.name.split('.').pop() || 'pdf';
+          const quizFileName = `Quiz_${safTrainee}_${safeName}_${dateStr}.${ext}`;
+
+          await uploadToGoogleDrive({
+            employeeName: traineeName,
+            fileName: quizFileName,
+            fileBase64: quizBase64,
+            mimeType: selectedProof.type,
+            subfolder: 'Training Records/' + moduleName,
+          });
+        } catch (quizDriveErr) {
+          console.error('Quiz Drive upload failed (assessment saved):', quizDriveErr);
+        }
       }
 
       // Create notification on failure

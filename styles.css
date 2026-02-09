@@ -934,32 +934,123 @@ main {
 .topic-checklist-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   padding: 10px 12px;
   border: 1px solid #333;
   border-radius: 6px;
   margin-bottom: 6px;
   background: #1a1a1a;
   font-size: 14px;
-  cursor: pointer;
 }
 
 .topic-checklist-item:hover {
   border-color: #555;
 }
 
-.topic-checklist-item input[type="checkbox"] {
-  accent-color: #6ea8fe;
+/* Toggle button (covered / not covered) */
+.topic-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 2px solid #555;
+  border-radius: 6px;
+  background: #222;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s, background 0.15s;
 }
 
-.topic-checklist-item .topic-status {
-  font-size: 16px;
-  min-width: 20px;
-  text-align: center;
+.topic-toggle-btn:hover {
+  border-color: #888;
 }
 
-.topic-status-pass { color: #4caf50; }
-.topic-status-fail { color: #ef4444; }
+.topic-toggle-btn.topic-btn-covered {
+  border-color: #4caf50;
+  background: #0a3d1f;
+}
+
+/* Large tick and cross icons */
+.topic-icon {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.topic-icon-covered {
+  color: #4caf50;
+}
+
+.topic-icon-uncovered {
+  color: #ef4444;
+}
+
+/* Topic label */
+.topic-label {
+  flex: 1;
+  color: #e0e0e0;
+}
+
+.topic-label-na {
+  color: #666;
+  text-decoration: line-through;
+}
+
+/* N/A button */
+.topic-na-btn {
+  background: #222;
+  border: 1px solid #555;
+  color: #888;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.topic-na-btn:hover {
+  border-color: #888;
+  color: #ccc;
+}
+
+.topic-na-btn.topic-na-active {
+  background: #3d3000;
+  border-color: #ffc107;
+  color: #ffc107;
+}
+
+/* Detail view: larger icons for covered/uncovered/na */
+.topic-icon-detail {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  font-size: 20px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.topic-icon-detail.topic-icon-covered {
+  color: #4caf50;
+  background: #0a3d1f;
+}
+
+.topic-icon-detail.topic-icon-uncovered {
+  color: #ef4444;
+  background: #3d1010;
+}
+
+.topic-icon-detail.topic-icon-na {
+  color: #ffc107;
+  background: #3d3000;
+  font-size: 11px;
+  font-weight: 700;
+}
 
 /* ---- Score Display ---- */
 .score-pass {
