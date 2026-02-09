@@ -30,18 +30,21 @@ export async function render(el) {
 
         <div class="form-row">
           <div class="form-group">
-            <label for="trainee-select">Trainee <span class="required">*</span></label>
-            <select id="trainee-select" required>
-              <option value="">Select trainee...</option>
-              ${employees.map(e => `<option value="${e.id}" data-name="${esc(e.full_name)}">${esc(e.full_name)}</option>`).join('')}
-            </select>
+            <label>Trainee <span class="required">*</span></label>
+            <div class="searchable-select" id="trainee-wrapper">
+              <input type="text" class="searchable-select-input" id="trainee-search" placeholder="Search trainee..." autocomplete="off">
+              <input type="hidden" id="trainee-value">
+              <input type="hidden" id="trainee-name-value">
+              <div class="searchable-select-dropdown" id="trainee-dropdown"></div>
+            </div>
           </div>
           <div class="form-group">
-            <label for="module-select">Module <span class="required">*</span></label>
-            <select id="module-select" required>
-              <option value="">Select module...</option>
-              ${modules.map(m => `<option value="${m.id}">${esc(m.module_name)}</option>`).join('')}
-            </select>
+            <label>Module <span class="required">*</span></label>
+            <div class="searchable-select" id="module-wrapper">
+              <input type="text" class="searchable-select-input" id="module-search" placeholder="Search module..." autocomplete="off">
+              <input type="hidden" id="module-value">
+              <div class="searchable-select-dropdown" id="module-dropdown"></div>
+            </div>
           </div>
         </div>
 
@@ -95,13 +98,94 @@ export async function render(el) {
     </form>
   `;
 
-  const moduleSelect = el.querySelector('#module-select');
   const topicsSection = el.querySelector('#topics-section');
   const topicChecklist = el.querySelector('#topic-checklist');
   const errorArea = el.querySelector('#error-area');
   const submitBtn = el.querySelector('#submit-btn');
   const progressArea = el.querySelector('#progress-area');
   const form = el.querySelector('#session-form');
+
+  // ---- Searchable dropdowns ----
+  function initSearchableSelect(wrapperEl, searchEl, dropdownEl, valueEl, items, onSelect) {
+    function renderDropdown(filter) {
+      const q = (filter || '').toLowerCase();
+      const matched = q ? items.filter(i => i.label.toLowerCase().includes(q)) : items;
+      if (matched.length === 0) {
+        dropdownEl.innerHTML = '<div class="searchable-select-empty">No results</div>';
+      } else {
+        dropdownEl.innerHTML = matched.map(i =>
+          `<div class="searchable-select-option" data-value="${i.value}">${esc(i.label)}</div>`
+        ).join('');
+      }
+      dropdownEl.style.display = '';
+    }
+
+    searchEl.addEventListener('focus', () => renderDropdown(searchEl.value));
+    searchEl.addEventListener('input', () => {
+      valueEl.value = '';
+      renderDropdown(searchEl.value);
+      if (onSelect) onSelect('');
+    });
+
+    dropdownEl.addEventListener('mousedown', (e) => {
+      e.preventDefault(); // prevent blur before click registers
+      const opt = e.target.closest('.searchable-select-option');
+      if (!opt) return;
+      const val = opt.dataset.value;
+      const item = items.find(i => i.value === val);
+      if (!item) return;
+      searchEl.value = item.label;
+      valueEl.value = val;
+      dropdownEl.style.display = 'none';
+      if (onSelect) onSelect(val, item);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!wrapperEl.contains(e.target)) dropdownEl.style.display = 'none';
+    });
+  }
+
+  // Trainee searchable select
+  const traineeItems = employees.map(e => ({ value: e.id, label: e.full_name }));
+  const traineeValueEl = el.querySelector('#trainee-value');
+  const traineeNameEl = el.querySelector('#trainee-name-value');
+  initSearchableSelect(
+    el.querySelector('#trainee-wrapper'),
+    el.querySelector('#trainee-search'),
+    el.querySelector('#trainee-dropdown'),
+    traineeValueEl,
+    traineeItems,
+    (val, item) => { traineeNameEl.value = item ? item.label : ''; }
+  );
+
+  // Module searchable select
+  const moduleItems = modules.map(m => ({ value: m.id, label: m.module_name }));
+  const moduleValueEl = el.querySelector('#module-value');
+  initSearchableSelect(
+    el.querySelector('#module-wrapper'),
+    el.querySelector('#module-search'),
+    el.querySelector('#module-dropdown'),
+    moduleValueEl,
+    moduleItems,
+    async (val) => {
+      if (!val) {
+        topicsSection.style.display = 'none';
+        currentModule = null;
+        topicStates = [];
+        return;
+      }
+      currentModule = await fetchModule(val);
+      const syllabus = Array.isArray(currentModule.syllabus) ? currentModule.syllabus : [];
+      if (syllabus.length === 0) {
+        topicsSection.style.display = 'none';
+        topicStates = [];
+        return;
+      }
+      topicsSection.style.display = '';
+      topicStates = syllabus.map(() => false);
+      refreshTopicList();
+    }
+  );
 
   // Signature pad
   const { createSignaturePad } = await import('../utils/signature-pad.js');
@@ -132,27 +216,6 @@ export async function render(el) {
     topicChecklist.innerHTML = syllabus.map((topic, i) => renderTopicItem(topic, i)).join('');
   }
 
-  // Load topic checklist when module changes
-  moduleSelect.addEventListener('change', async () => {
-    const moduleId = moduleSelect.value;
-    if (!moduleId) {
-      topicsSection.style.display = 'none';
-      currentModule = null;
-      topicStates = [];
-      return;
-    }
-    currentModule = await fetchModule(moduleId);
-    const syllabus = Array.isArray(currentModule.syllabus) ? currentModule.syllabus : [];
-    if (syllabus.length === 0) {
-      topicsSection.style.display = 'none';
-      topicStates = [];
-      return;
-    }
-    topicsSection.style.display = '';
-    topicStates = syllabus.map(() => false);
-    refreshTopicList();
-  });
-
   // Delegate click events on topic buttons
   topicChecklist.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-action]');
@@ -175,10 +238,9 @@ export async function render(el) {
     e.preventDefault();
     errorArea.innerHTML = '';
 
-    const traineeSelect = el.querySelector('#trainee-select');
-    const traineeId = traineeSelect.value;
-    const traineeName = traineeSelect.selectedOptions[0]?.dataset.name || '';
-    const moduleId = moduleSelect.value;
+    const traineeId = traineeValueEl.value;
+    const traineeName = traineeNameEl.value;
+    const moduleId = moduleValueEl.value;
     const sessionDate = el.querySelector('#session-date').value;
     const declaration = el.querySelector('#trainer-declaration').checked;
     const notes = el.querySelector('#session-notes').value.trim();

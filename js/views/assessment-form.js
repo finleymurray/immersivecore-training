@@ -34,18 +34,21 @@ export async function render(el) {
 
         <div class="form-row">
           <div class="form-group">
-            <label for="trainee-select">Trainee <span class="required">*</span></label>
-            <select id="trainee-select" required>
-              <option value="">Select trainee...</option>
-              ${employees.map(e => `<option value="${e.id}" data-name="${esc(e.full_name)}">${esc(e.full_name)}</option>`).join('')}
-            </select>
+            <label>Trainee <span class="required">*</span></label>
+            <div class="searchable-select" id="trainee-wrapper">
+              <input type="text" class="searchable-select-input" id="trainee-search" placeholder="Search trainee..." autocomplete="off">
+              <input type="hidden" id="trainee-value">
+              <input type="hidden" id="trainee-name-value">
+              <div class="searchable-select-dropdown" id="trainee-dropdown"></div>
+            </div>
           </div>
           <div class="form-group">
-            <label for="module-select">Module <span class="required">*</span></label>
-            <select id="module-select" required>
-              <option value="">Select module...</option>
-              ${modules.map(m => `<option value="${m.id}" data-max="${m.max_score}" data-pass="${m.pass_mark}" data-refresher="${m.refresher_period_months}">${esc(m.module_name)}</option>`).join('')}
-            </select>
+            <label>Module <span class="required">*</span></label>
+            <div class="searchable-select" id="module-wrapper">
+              <input type="text" class="searchable-select-input" id="module-search" placeholder="Search module..." autocomplete="off">
+              <input type="hidden" id="module-value">
+              <div class="searchable-select-dropdown" id="module-dropdown"></div>
+            </div>
           </div>
         </div>
 
@@ -102,7 +105,6 @@ export async function render(el) {
     </form>
   `;
 
-  const moduleSelect = el.querySelector('#module-select');
   const scoreSection = el.querySelector('#score-section');
   const scoreContext = el.querySelector('#score-context');
   const scoreInput = el.querySelector('#score-input');
@@ -117,25 +119,86 @@ export async function render(el) {
   let currentModule = null;
   let selectedProof = null;
 
-  // Module change — show score section
-  moduleSelect.addEventListener('change', async () => {
-    const opt = moduleSelect.selectedOptions[0];
-    if (!opt || !opt.value) {
-      scoreSection.style.display = 'none';
-      currentModule = null;
-      return;
+  // ---- Searchable dropdowns ----
+  function initSearchableSelect(wrapperEl, searchEl, dropdownEl, valueEl, items, onSelect) {
+    function renderDropdown(filter) {
+      const q = (filter || '').toLowerCase();
+      const matched = q ? items.filter(i => i.label.toLowerCase().includes(q)) : items;
+      if (matched.length === 0) {
+        dropdownEl.innerHTML = '<div class="searchable-select-empty">No results</div>';
+      } else {
+        dropdownEl.innerHTML = matched.map(i =>
+          `<div class="searchable-select-option" data-value="${i.value}">${esc(i.label)}</div>`
+        ).join('');
+      }
+      dropdownEl.style.display = '';
     }
-    const maxScore = parseInt(opt.dataset.max);
-    const passMark = parseInt(opt.dataset.pass);
-    currentModule = { id: opt.value, max_score: maxScore, pass_mark: passMark, refresher_period_months: parseInt(opt.dataset.refresher) };
 
-    scoreSection.style.display = '';
-    scoreContext.textContent = `Max score: ${maxScore} | Pass mark: ${passMark}`;
-    scoreInput.max = maxScore;
-    scoreInput.value = '';
-    scoreFeedback.textContent = '';
-    scoreInput.className = '';
-  });
+    searchEl.addEventListener('focus', () => renderDropdown(searchEl.value));
+    searchEl.addEventListener('input', () => {
+      valueEl.value = '';
+      renderDropdown(searchEl.value);
+      if (onSelect) onSelect('');
+    });
+
+    dropdownEl.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      const opt = e.target.closest('.searchable-select-option');
+      if (!opt) return;
+      const val = opt.dataset.value;
+      const item = items.find(i => i.value === val);
+      if (!item) return;
+      searchEl.value = item.label;
+      valueEl.value = val;
+      dropdownEl.style.display = 'none';
+      if (onSelect) onSelect(val, item);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!wrapperEl.contains(e.target)) dropdownEl.style.display = 'none';
+    });
+  }
+
+  // Trainee searchable select
+  const traineeItems = employees.map(e => ({ value: e.id, label: e.full_name }));
+  const traineeValueEl = el.querySelector('#trainee-value');
+  const traineeNameEl = el.querySelector('#trainee-name-value');
+  initSearchableSelect(
+    el.querySelector('#trainee-wrapper'),
+    el.querySelector('#trainee-search'),
+    el.querySelector('#trainee-dropdown'),
+    traineeValueEl,
+    traineeItems,
+    (val, item) => { traineeNameEl.value = item ? item.label : ''; }
+  );
+
+  // Module searchable select — store extra data per module
+  const moduleItemsData = modules.map(m => ({
+    value: m.id, label: m.module_name,
+    max_score: m.max_score, pass_mark: m.pass_mark, refresher_period_months: m.refresher_period_months,
+  }));
+  const moduleValueEl = el.querySelector('#module-value');
+  initSearchableSelect(
+    el.querySelector('#module-wrapper'),
+    el.querySelector('#module-search'),
+    el.querySelector('#module-dropdown'),
+    moduleValueEl,
+    moduleItemsData,
+    (val, item) => {
+      if (!val || !item) {
+        scoreSection.style.display = 'none';
+        currentModule = null;
+        return;
+      }
+      currentModule = { id: val, max_score: item.max_score, pass_mark: item.pass_mark, refresher_period_months: item.refresher_period_months };
+      scoreSection.style.display = '';
+      scoreContext.textContent = `Max score: ${item.max_score} | Pass mark: ${item.pass_mark}`;
+      scoreInput.max = item.max_score;
+      scoreInput.value = '';
+      scoreFeedback.textContent = '';
+      scoreInput.className = '';
+    }
+  );
 
   // Live score validation
   scoreInput.addEventListener('input', () => {
@@ -206,10 +269,9 @@ export async function render(el) {
     e.preventDefault();
     errorArea.innerHTML = '';
 
-    const traineeSelect = el.querySelector('#trainee-select');
-    const traineeId = traineeSelect.value;
-    const traineeName = traineeSelect.selectedOptions[0]?.dataset.name || '';
-    const moduleId = moduleSelect.value;
+    const traineeId = traineeValueEl.value;
+    const traineeName = traineeNameEl.value;
+    const moduleId = moduleValueEl.value;
     const assessmentDate = el.querySelector('#assessment-date').value;
     const score = parseInt(scoreInput.value);
     const notes = el.querySelector('#assessment-notes').value.trim();

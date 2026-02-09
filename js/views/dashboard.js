@@ -119,8 +119,7 @@ export async function render(el) {
         const status = getComplianceStatus(emp.id, mod, assessments, sessions);
         return { status, ...statusToCell(status) };
       });
-      const allQualified = cells.every(c => c.status === 'qualified');
-      return { emp, cells, allQualified };
+      return { emp, cells };
     });
 
     container.innerHTML = `
@@ -129,7 +128,6 @@ export async function render(el) {
           <thead>
             <tr>
               <th>Employee</th>
-              <th>Status</th>
               ${modules.map(m => `<th class="module-header" title="${esc(m.module_name)}">${esc(m.module_name)}</th>`).join('')}
             </tr>
           </thead>
@@ -137,11 +135,6 @@ export async function render(el) {
             ${rows.map(row => `
               <tr>
                 <td class="employee-name" data-id="${row.emp.id}">${esc(row.emp.full_name)}</td>
-                <td>
-                  <span class="deployment-badge ${row.allQualified ? 'deployment-complete' : 'deployment-incomplete'}">
-                    ${row.allQualified ? 'Fully Trained' : 'Incomplete'}
-                  </span>
-                </td>
                 ${row.cells.map((cell, i) => `
                   <td class="matrix-cell ${cell.cls}" data-emp="${row.emp.id}" data-mod="${modules[i].id}" title="${modules[i].module_name}: ${cell.status.replace('_', ' ')}">${cell.icon}</td>
                 `).join('')}
