@@ -62,7 +62,10 @@ export async function render(el) {
 
       <fieldset class="form-section" id="topics-section" style="display:none;">
         <legend><span class="section-number">2</span> Topic Checklist</legend>
-        <p class="section-description">Mark each topic as covered or N/A (not applicable to this employee's role).</p>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <p class="section-description" style="margin-bottom:0;">Mark each topic as covered or N/A (not applicable to this employee's role).</p>
+          <button type="button" class="btn btn-sm btn-secondary" id="select-all-topics">Select All</button>
+        </div>
         <ul class="topic-checklist" id="topic-checklist"></ul>
       </fieldset>
 
@@ -218,7 +221,20 @@ export async function render(el) {
   function refreshTopicList() {
     const syllabus = currentModule?.syllabus || [];
     topicChecklist.innerHTML = syllabus.map((topic, i) => renderTopicItem(topic, i)).join('');
+    // Update Select All button text
+    const selectAllBtn = el.querySelector('#select-all-topics');
+    if (selectAllBtn) {
+      const allCovered = topicStates.length > 0 && topicStates.every(s => s === true || s === 'na');
+      selectAllBtn.textContent = allCovered ? 'Deselect All' : 'Select All';
+    }
   }
+
+  // Select All / Deselect All
+  el.querySelector('#select-all-topics').addEventListener('click', () => {
+    const allCovered = topicStates.length > 0 && topicStates.every(s => s === true || s === 'na');
+    topicStates = topicStates.map(s => s === 'na' ? 'na' : (allCovered ? false : true));
+    refreshTopicList();
+  });
 
   // Delegate click events on topic buttons
   topicChecklist.addEventListener('click', (e) => {
