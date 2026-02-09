@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ImmersiveCore Training Portal</title>
+<link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+<link rel="stylesheet" href="styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<header class="header">
+  <div class="container header-inner">
+    <a href="#/" class="header-link">
+      <img class="header-logo" src="2.png" alt="ImmersiveCore">
+      <h1>Training &amp; Compliance</h1>
+    </a>
+  </div>
+</header>
+
+<nav class="nav">
+  <div class="container nav-inner">
+    <a href="#/" class="nav-link">Compliance</a>
+    <a href="#/modules" class="nav-link">Modules</a>
+    <a href="#/session/new" class="nav-link">Log Session</a>
+    <a href="#/assessment/new" class="nav-link">Log Assessment</a>
+    <div class="user-info" id="user-info" style="display:none;"></div>
+  </div>
+</nav>
+
+<main class="container" id="app">
+  <div class="loading">Loading...</div>
+</main>
+
+<!-- CDN dependencies -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script type="module" src="app.js"></script>
+
+</body>
+</html>
