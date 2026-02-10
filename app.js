@@ -1,5 +1,6 @@
 import { addRoute, setAuthGuard, navigate, initRouter } from './js/router.js';
 import { getSession, getUserProfile, isManager, isStaffOrManager, onAuthStateChange, clearProfileCache } from './js/services/auth-service.js';
+import { bootstrapSSOSession } from './js/supabase-client.js';
 
 // ---- Auth guard — all routes require staff or manager role ----
 setAuthGuard(async (routeOptions) => {
@@ -131,6 +132,8 @@ onAuthStateChange((event, session) => {
   updateNavAuth(session);
 });
 
-getSession().then(session => updateNavAuth(session));
-
-initRouter(document.getElementById('app'));
+// Bootstrap SSO then initialise
+bootstrapSSOSession().then(() => {
+  getSession().then(session => updateNavAuth(session));
+  initRouter(document.getElementById('app'));
+});

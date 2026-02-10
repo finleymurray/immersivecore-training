@@ -1,4 +1,5 @@
 import { getSupabase } from '../supabase-client.js';
+import { clearSharedRefreshToken } from '../shared-auth-cookie.js';
 
 let cachedProfile = null;
 
@@ -15,6 +16,7 @@ export async function signOut() {
   const sb = getSupabase();
   await logAuditEvent('logout');
   cachedProfile = null;
+  clearSharedRefreshToken();
   const { error } = await sb.auth.signOut();
   if (error) throw error;
 }

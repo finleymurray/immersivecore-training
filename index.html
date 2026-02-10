@@ -44,7 +44,15 @@
 <!-- CDN dependencies -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script type="module" src="app.js?v=8"></script>
+<script type="module" src="app.js?v=9"></script>
+
+<!-- Cookie disclosure -->
+<div id="cookie-notice" style="display:none; position:fixed; bottom:0; left:0; right:0; background:#111; border-top:1px solid #333; padding:12px 20px; font-family:'Inter',sans-serif; font-size:13px; color:#aaa; z-index:9999; text-align:center;">
+    This site uses a cookie for single sign-on across ImmersiveCore apps.
+    <a href="https://immersivecore.network/cookies.html" style="color:#fff; margin-left:6px;" target="_blank">Learn more</a>
+    <button onclick="document.getElementById('cookie-notice').style.display='none';document.cookie='ic_cookie_notice=1; domain=.immersivecore.network; path=/; max-age=31536000; secure; samesite=lax';" style="margin-left:12px; background:none; border:1px solid #555; color:#fff; padding:4px 12px; border-radius:4px; cursor:pointer; font-size:12px;">OK</button>
+</div>
+<script>if(!document.cookie.split('; ').find(function(r){return r.startsWith('ic_cookie_notice=')}))document.getElementById('cookie-notice').style.display='';</script>
 
 </body>
 </html>
