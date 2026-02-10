@@ -135,4 +135,8 @@ onAuthStateChange((event, session) => {
 // Initialise router immediately, SSO bootstrap runs in background
 getSession().then(session => updateNavAuth(session));
 initRouter(document.getElementById('app'));
-bootstrapSSOSession();
+bootstrapSSOSession().then(session => {
+  if (session && (window.location.hash === '#/login' || window.location.hash === '')) {
+    navigate('/');
+  }
+});
