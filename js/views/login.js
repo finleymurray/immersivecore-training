@@ -1,5 +1,5 @@
-import { signIn, isStaffOrManager } from '../services/auth-service.js?v=7';
-import { navigate } from '../router.js?v=7';
+import { signIn, isStaffOrManager } from '../services/auth-service.js';
+import { navigate } from '../router.js';
 
 export async function render(el) {
   el.innerHTML = `
@@ -54,7 +54,7 @@ export async function render(el) {
       if (!allowed) {
         errorEl.textContent = 'Access denied. You do not have permission to use this portal.';
         errorEl.style.display = 'block';
-        const { signOut } = await import('../services/auth-service.js?v=7');
+        const { signOut } = await import('../services/auth-service.js');
         await signOut();
         btn.disabled = false;
         btn.textContent = 'Sign in';

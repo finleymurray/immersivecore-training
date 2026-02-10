@@ -1,5 +1,5 @@
 import { fetchAllModules } from '../services/training-service.js';
-import { isManager } from '../services/auth-service.js?v=7';
+import { isManager } from '../services/auth-service.js';
 
 function esc(str) {
   if (!str) return '';

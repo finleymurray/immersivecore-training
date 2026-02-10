@@ -1,5 +1,5 @@
-import { addRoute, setAuthGuard, navigate, initRouter } from './js/router.js?v=7';
-import { getSession, getUserProfile, isManager, isStaffOrManager, onAuthStateChange, clearProfileCache } from './js/services/auth-service.js?v=7';
+import { addRoute, setAuthGuard, navigate, initRouter } from './js/router.js';
+import { getSession, getUserProfile, isManager, isStaffOrManager, onAuthStateChange, clearProfileCache } from './js/services/auth-service.js';
 
 // ---- Auth guard — all routes require staff or manager role ----
 setAuthGuard(async (routeOptions) => {
@@ -23,24 +23,24 @@ addRoute('/login', async (el) => {
     const allowed = await isStaffOrManager();
     if (allowed) { navigate('/'); return; }
   }
-  const { render } = await import('./js/views/login.js?v=7');
+  const { render } = await import('./js/views/login.js');
   await render(el);
 }, { public: true });
 
 addRoute('/', async (el) => {
-  const { render } = await import('./js/views/dashboard.js?v=7');
+  const { render } = await import('./js/views/dashboard.js');
   await render(el);
 });
 
 addRoute('/modules', async (el) => {
-  const { render } = await import('./js/views/modules-list.js?v=7');
+  const { render } = await import('./js/views/modules-list.js');
   await render(el);
 });
 
 addRoute('/modules/new', async (el) => {
   const manager = await isManager();
   if (!manager) { navigate('/'); return; }
-  const { render } = await import('./js/views/module-form.js?v=7');
+  const { render } = await import('./js/views/module-form.js');
   await render(el);
 });
 
@@ -48,50 +48,49 @@ addRoute('/modules/:id', async (el, params) => {
   if (params.id === 'new') {
     const manager = await isManager();
     if (!manager) { navigate('/'); return; }
-    const { render } = await import('./js/views/module-form.js?v=7');
+    const { render } = await import('./js/views/module-form.js');
     await render(el);
     return;
   }
-  const { render } = await import('./js/views/module-detail.js?v=7');
+  const { render } = await import('./js/views/module-detail.js');
   await render(el, params.id);
 });
 
 addRoute('/modules/:id/edit', async (el, params) => {
   const manager = await isManager();
   if (!manager) { navigate('/'); return; }
-  const { render } = await import('./js/views/module-form.js?v=7');
+  const { render } = await import('./js/views/module-form.js');
   await render(el, params.id);
 });
 
 addRoute('/session/new', async (el) => {
-  const { render } = await import('./js/views/session-form.js?v=7');
+  const { render } = await import('./js/views/session-form.js');
   await render(el);
 });
 
 addRoute('/session/:id', async (el, params) => {
-  const { render } = await import('./js/views/session-detail.js?v=7');
+  const { render } = await import('./js/views/session-detail.js');
   await render(el, params.id);
 });
 
 addRoute('/assessment/new', async (el) => {
-  const { render } = await import('./js/views/assessment-form.js?v=7');
+  const { render } = await import('./js/views/assessment-form.js');
   await render(el);
 });
 
 addRoute('/assessment/:id', async (el, params) => {
-  const { render } = await import('./js/views/assessment-detail.js?v=7');
+  const { render } = await import('./js/views/assessment-detail.js');
   await render(el, params.id);
 });
 
 addRoute('/employee/:id', async (el, params) => {
-  const { render } = await import('./js/views/employee-training.js?v=7');
+  const { render } = await import('./js/views/employee-training.js');
   await render(el, params.id);
 });
 
 // ---- Nav auth state ----
 async function updateNavAuth(session) {
   const userInfoEl = document.getElementById('user-info');
-  const modulesNavLink = document.getElementById('nav-modules');
   if (!userInfoEl) return;
 
   if (session) {
@@ -103,15 +102,10 @@ async function updateNavAuth(session) {
       `;
       userInfoEl.style.display = 'flex';
 
-      // Hide Modules nav link for non-managers
-      if (modulesNavLink) {
-        modulesNavLink.style.display = profile?.role === 'manager' ? '' : 'none';
-      }
-
       const signOutBtn = document.getElementById('sign-out-btn');
       if (signOutBtn) {
         signOutBtn.addEventListener('click', async () => {
-          const { signOut } = await import('./js/services/auth-service.js?v=7');
+          const { signOut } = await import('./js/services/auth-service.js');
           await signOut();
           navigate('/login');
         });
@@ -122,7 +116,6 @@ async function updateNavAuth(session) {
   } else {
     userInfoEl.innerHTML = '';
     userInfoEl.style.display = 'none';
-    if (modulesNavLink) modulesNavLink.style.display = '';
   }
 }
 
