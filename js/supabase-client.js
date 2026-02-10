@@ -46,7 +46,13 @@ export async function bootstrapSSOSession() {
   if (!sharedRT) return null;
 
   try {
-    const { data, error } = await sb.auth.refreshSession({ refresh_token: sharedRT });
+    const timeout = new Promise(resolve =>
+      setTimeout(() => resolve({ data: {}, error: { message: 'SSO timeout' } }), 4000)
+    );
+    const { data, error } = await Promise.race([
+      sb.auth.refreshSession({ refresh_token: sharedRT }),
+      timeout,
+    ]);
     if (error) {
       clearSharedRefreshToken();
       return null;
