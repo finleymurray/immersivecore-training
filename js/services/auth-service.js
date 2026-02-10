@@ -54,6 +54,11 @@ export async function isManager() {
   return profile?.role === 'manager';
 }
 
+export async function isStaffOrManager() {
+  const profile = await getUserProfile();
+  return profile?.role === 'manager' || profile?.role === 'staff';
+}
+
 export function onAuthStateChange(callback) {
   const sb = getSupabase();
   const { data: { subscription } } = sb.auth.onAuthStateChange((event, session) => {

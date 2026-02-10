@@ -1,5 +1,6 @@
 import { fetchModule } from '../services/training-service.js';
 import { getModulePDFUrl, getModuleFileUrl } from '../services/storage-service.js';
+import { isManager } from '../services/auth-service.js';
 
 function esc(str) {
   if (!str) return '';
@@ -15,6 +16,7 @@ const TYPE_LABELS = {
 
 export async function render(el, id) {
   const mod = await fetchModule(id);
+  const manager = await isManager();
 
   let pdfUrl = null;
   if (mod.source_pdf_path) {
@@ -34,9 +36,9 @@ export async function render(el, id) {
         <h1>${esc(mod.module_name)}</h1>
         <span class="badge ${mod.is_active ? 'badge-active' : 'badge-inactive'}">${mod.is_active ? 'Active' : 'Inactive'}</span>
       </div>
-      <div class="header-actions">
+      ${manager ? `<div class="header-actions">
         <a href="#/modules/${id}/edit" class="btn btn-primary">Edit</a>
-      </div>
+      </div>` : ''}
     </div>
 
     <div class="detail-grid">

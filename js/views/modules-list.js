@@ -1,4 +1,5 @@
 import { fetchAllModules } from '../services/training-service.js';
+import { isManager } from '../services/auth-service.js';
 
 function esc(str) {
   if (!str) return '';
@@ -13,10 +14,11 @@ const TYPE_LABELS = {
 };
 
 export async function render(el) {
+  const manager = await isManager();
   el.innerHTML = `
     <div class="page-header">
       <h1>Training Modules</h1>
-      <a href="#/modules/new" class="btn btn-primary">+ New Module</a>
+      ${manager ? '<a href="#/modules/new" class="btn btn-primary">+ New Module</a>' : ''}
     </div>
 
     <div class="filter-bar">

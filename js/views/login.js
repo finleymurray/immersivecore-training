@@ -1,4 +1,4 @@
-import { signIn, isManager } from '../services/auth-service.js';
+import { signIn, isStaffOrManager } from '../services/auth-service.js';
 import { navigate } from '../router.js';
 
 export async function render(el) {
@@ -7,7 +7,7 @@ export async function render(el) {
       <div class="login-card">
         <img src="2.png" alt="ImmersiveCore" class="login-logo">
         <h2>Training &amp; Compliance Portal</h2>
-        <p class="login-subtitle">Sign in with your manager account</p>
+        <p class="login-subtitle">Sign in with your account</p>
 
         <div id="login-error" class="login-error" style="display:none;"></div>
 
@@ -50,9 +50,9 @@ export async function render(el) {
 
     try {
       await signIn(email, password);
-      const manager = await isManager();
-      if (!manager) {
-        errorEl.textContent = 'Access denied. This portal is for managers only.';
+      const allowed = await isStaffOrManager();
+      if (!allowed) {
+        errorEl.textContent = 'Access denied. You do not have permission to use this portal.';
         errorEl.style.display = 'block';
         const { signOut } = await import('../services/auth-service.js');
         await signOut();

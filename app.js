@@ -1,15 +1,15 @@
 import { addRoute, setAuthGuard, navigate, initRouter } from './js/router.js';
-import { getSession, getUserProfile, isManager, onAuthStateChange, clearProfileCache } from './js/services/auth-service.js';
+import { getSession, getUserProfile, isManager, isStaffOrManager, onAuthStateChange, clearProfileCache } from './js/services/auth-service.js';
 
-// ---- Auth guard — all routes require manager role ----
+// ---- Auth guard — all routes require staff or manager role ----
 setAuthGuard(async (routeOptions) => {
   const session = await getSession();
   if (!session) {
     navigate('/login');
     return false;
   }
-  const manager = await isManager();
-  if (!manager) {
+  const allowed = await isStaffOrManager();
+  if (!allowed) {
     navigate('/login');
     return false;
   }
@@ -20,8 +20,8 @@ setAuthGuard(async (routeOptions) => {
 addRoute('/login', async (el) => {
   const session = await getSession();
   if (session) {
-    const manager = await isManager();
-    if (manager) { navigate('/'); return; }
+    const allowed = await isStaffOrManager();
+    if (allowed) { navigate('/'); return; }
   }
   const { render } = await import('./js/views/login.js');
   await render(el);
@@ -38,12 +38,16 @@ addRoute('/modules', async (el) => {
 });
 
 addRoute('/modules/new', async (el) => {
+  const manager = await isManager();
+  if (!manager) { navigate('/'); return; }
   const { render } = await import('./js/views/module-form.js?v=6');
   await render(el);
 });
 
 addRoute('/modules/:id', async (el, params) => {
   if (params.id === 'new') {
+    const manager = await isManager();
+    if (!manager) { navigate('/'); return; }
     const { render } = await import('./js/views/module-form.js?v=6');
     await render(el);
     return;
@@ -53,6 +57,8 @@ addRoute('/modules/:id', async (el, params) => {
 });
 
 addRoute('/modules/:id/edit', async (el, params) => {
+  const manager = await isManager();
+  if (!manager) { navigate('/'); return; }
   const { render } = await import('./js/views/module-form.js?v=6');
   await render(el, params.id);
 });
@@ -85,6 +91,7 @@ addRoute('/employee/:id', async (el, params) => {
 // ---- Nav auth state ----
 async function updateNavAuth(session) {
   const userInfoEl = document.getElementById('user-info');
+  const modulesNavLink = document.getElementById('nav-modules');
   if (!userInfoEl) return;
 
   if (session) {
@@ -95,6 +102,11 @@ async function updateNavAuth(session) {
         <button type="button" class="btn-sign-out" id="sign-out-btn">Sign out</button>
       `;
       userInfoEl.style.display = 'flex';
+
+      // Hide Modules nav link for non-managers
+      if (modulesNavLink) {
+        modulesNavLink.style.display = profile?.role === 'manager' ? '' : 'none';
+      }
 
       const signOutBtn = document.getElementById('sign-out-btn');
       if (signOutBtn) {
@@ -110,6 +122,7 @@ async function updateNavAuth(session) {
   } else {
     userInfoEl.innerHTML = '';
     userInfoEl.style.display = 'none';
+    if (modulesNavLink) modulesNavLink.style.display = '';
   }
 }
 
