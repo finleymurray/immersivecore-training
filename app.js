@@ -1,5 +1,5 @@
-import { addRoute, setAuthGuard, navigate, initRouter } from './js/router.js';
-import { getSession, getUserProfile, isManager, isStaffOrManager, onAuthStateChange, clearProfileCache } from './js/services/auth-service.js';
+import { addRoute, setAuthGuard, navigate, initRouter } from './js/router.js?v=7';
+import { getSession, getUserProfile, isManager, isStaffOrManager, onAuthStateChange, clearProfileCache } from './js/services/auth-service.js?v=7';
 
 // ---- Auth guard — all routes require staff or manager role ----
 setAuthGuard(async (routeOptions) => {
@@ -23,7 +23,7 @@ addRoute('/login', async (el) => {
     const allowed = await isStaffOrManager();
     if (allowed) { navigate('/'); return; }
   }
-  const { render } = await import('./js/views/login.js');
+  const { render } = await import('./js/views/login.js?v=7');
   await render(el);
 }, { public: true });
 
@@ -111,7 +111,7 @@ async function updateNavAuth(session) {
       const signOutBtn = document.getElementById('sign-out-btn');
       if (signOutBtn) {
         signOutBtn.addEventListener('click', async () => {
-          const { signOut } = await import('./js/services/auth-service.js');
+          const { signOut } = await import('./js/services/auth-service.js?v=7');
           await signOut();
           navigate('/login');
         });
