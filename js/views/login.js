@@ -24,6 +24,9 @@ export async function render(el) {
 
           <button type="submit" class="btn btn-primary login-btn" id="login-btn">Sign in</button>
         </form>
+        <p style="margin-top:16px;font-size:12px;color:#666;text-align:center;">
+          <a href="https://immersivecore.network/privacy-policy.html" target="_blank" style="color:#888;text-decoration:none;">Privacy Policy</a>
+        </p>
       </div>
     </div>
   `;
