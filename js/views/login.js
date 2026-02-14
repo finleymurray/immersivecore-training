@@ -65,10 +65,14 @@ export async function render(el) {
       }
       navigate('/');
     } catch (err) {
-      errorEl.textContent = err.message || 'Sign in failed. Please check your credentials.';
+      errorEl.textContent = 'Invalid email or password.';
       errorEl.style.display = 'block';
       btn.disabled = false;
       btn.textContent = 'Sign in';
+      try {
+        const { getSupabase } = await import('../supabase-client.js');
+        await getSupabase().rpc('log_failed_login', { attempted_email: email, error_msg: err.message || 'unknown' });
+      } catch (_) { /* best-effort logging */ }
     }
   });
 }
