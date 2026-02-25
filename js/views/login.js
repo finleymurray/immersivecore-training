@@ -1,4 +1,4 @@
-import { signIn, isStaffOrManager } from '../services/auth-service.js';
+import { signIn, isStaffOrManager, checkMFA, verifyMFA } from '../services/auth-service.js';
 import { navigate } from '../router.js';
 
 export async function render(el) {
@@ -35,6 +35,44 @@ export async function render(el) {
   const errorEl = el.querySelector('#login-error');
   const btn = el.querySelector('#login-btn');
 
+  function showMFAChallenge(factorId) {
+    const card = el.querySelector('.login-card');
+    card.innerHTML = `
+      <img src="2.png" alt="ImmersiveCore" class="login-logo">
+      <h2>Verification Required</h2>
+      <p class="login-subtitle">Enter the 6-digit code from your authenticator app</p>
+      <div id="mfa-error" class="login-error" style="display:none;"></div>
+      <form id="mfa-form" novalidate>
+        <div class="form-group">
+          <label for="mfa-code">Verification code</label>
+          <input type="text" id="mfa-code" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code" required style="text-align:center;font-size:20px;letter-spacing:6px;">
+        </div>
+        <button type="submit" class="btn btn-primary login-btn" id="mfa-btn">Verify</button>
+      </form>
+    `;
+    el.querySelector('#mfa-code').focus();
+    el.querySelector('#mfa-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const code = el.querySelector('#mfa-code').value.trim();
+      const mfaError = el.querySelector('#mfa-error');
+      const mfaBtn = el.querySelector('#mfa-btn');
+      mfaError.style.display = 'none';
+      mfaBtn.disabled = true;
+      mfaBtn.textContent = 'Verifying\u2026';
+      try {
+        await verifyMFA(factorId, code);
+        navigate('/');
+      } catch (err) {
+        mfaError.textContent = 'Invalid code. Try again.';
+        mfaError.style.display = 'block';
+        mfaBtn.disabled = false;
+        mfaBtn.textContent = 'Verify';
+        el.querySelector('#mfa-code').value = '';
+        el.querySelector('#mfa-code').focus();
+      }
+    });
+  }
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     errorEl.style.display = 'none';
@@ -61,6 +99,11 @@ export async function render(el) {
         await signOut();
         btn.disabled = false;
         btn.textContent = 'Sign in';
+        return;
+      }
+      const mfa = await checkMFA();
+      if (mfa.required) {
+        showMFAChallenge(mfa.factorId);
         return;
       }
       navigate('/');

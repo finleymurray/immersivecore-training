@@ -72,6 +72,30 @@ export function onAuthStateChange(callback) {
   return subscription;
 }
 
+/**
+ * Check if MFA verification is required for the current session.
+ */
+export async function checkMFA() {
+  const sb = getSupabase();
+  const { data } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (data.currentLevel === 'aal1' && data.nextLevel === 'aal2') {
+    const factors = await sb.auth.mfa.listFactors();
+    const totp = factors.data.totp[0];
+    return { required: true, factorId: totp.id };
+  }
+  return { required: false, factorId: null };
+}
+
+/**
+ * Verify a TOTP MFA code.
+ */
+export async function verifyMFA(factorId, code) {
+  const sb = getSupabase();
+  const { data, error } = await sb.auth.mfa.challengeAndVerify({ factorId, code });
+  if (error) throw error;
+  return data;
+}
+
 export async function logAuditEvent(action, extra = {}) {
   try {
     const sb = getSupabase();
